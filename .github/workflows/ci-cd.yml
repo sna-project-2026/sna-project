@@ -59,46 +59,61 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-  deploy:
+  deploy-staging:
     needs: build-and-test
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    environment: staging
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Ansible
+      - name: Install Ansible Docker Collection
+        run: ansible-galaxy collection install community.docker
+
+      - name: Generate Local Inventory
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible
-          ansible-galaxy collection install community.docker
+          cat <<EOF > ansible/inventory.ini
+          [staging]
+          127.0.0.1 ansible_connection=local
+          EOF
+
+      - name: Run Ansible Playbook for Staging
+        run: |
+          ansible-playbook -i ansible/inventory.ini ansible/deploy.yml \
+          --limit staging \
+          -e "ghcr_username=${{ github.actor }}" \
+          -e "ghcr_token=${{ secrets.GITHUB_TOKEN }}"
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: self-hosted
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup SSH Key and Known Hosts
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.STAGING_IP }} >> ~/.ssh/known_hosts
-          ssh-keyscan -H ${{ secrets.PROD_IP }} >> ~/.ssh/known_hosts
+          # Uses the environment-specific IP
+          ssh-keyscan -H ${{ secrets.VM_IP }} >> ~/.ssh/known_hosts
 
-      - name: Generate Ansible Inventory
+      - name: Generate Production Inventory
         run: |
           cat <<EOF > ansible/inventory.ini
-          [staging]
-          ${{ secrets.STAGING_IP }}
-
           [production]
-          ${{ secrets.PROD_IP }}
+          ${{ secrets.VM_IP }}
 
           [all:vars]
           ansible_user=deploy
           ansible_ssh_private_key_file=~/.ssh/id_rsa
           EOF
 
-      - name: Run Ansible Playbook
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
+      - name: Run Ansible Playbook for Production
         run: |
           ansible-playbook -i ansible/inventory.ini ansible/deploy.yml \
-          --limit ${{ github.event.inputs.deploy_target || 'staging' }} \
+          --limit production \
           -e "ghcr_username=${{ github.actor }}" \
           -e "ghcr_token=${{ secrets.GITHUB_TOKEN }}"
