@@ -79,10 +79,13 @@ jobs:
 
       - name: Run Ansible Playbook for Staging
         run: |
+          LOWERCASE_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          
           ansible-playbook -i infra/inventory.ini infra/deploy.yml \
           --limit staging \
           -e "ghcr_username=${{ github.actor }}" \
-          -e "ghcr_token=${{ secrets.GITHUB_TOKEN }}"
+          -e "ghcr_token=${{ secrets.GITHUB_TOKEN }}" \
+          -e "image_repo=$LOWERCASE_REPO"
 
   deploy-production:
     needs: deploy-staging
@@ -113,7 +116,10 @@ jobs:
 
       - name: Run Ansible Playbook for Production
         run: |
+          LOWERCASE_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          
           ansible-playbook -i infra/inventory.ini infra/deploy.yml \
           --limit production \
           -e "ghcr_username=${{ github.actor }}" \
-          -e "ghcr_token=${{ secrets.GITHUB_TOKEN }}"
+          -e "ghcr_token=${{ secrets.GITHUB_TOKEN }}" \
+          -e "image_repo=$LOWERCASE_REPO"

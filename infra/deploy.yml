@@ -21,7 +21,7 @@
 
     - name: Pull latest Docker image
       community.docker.docker_image:
-        name: "ghcr.io/{{ ghcr_username }}/sna-project:latest"
+        name: "ghcr.io/{{ image_repo }}:latest"
         source: pull
 
     - name: Run Docker Compose
@@ -29,3 +29,5 @@
         project_src: "{{ app_dir }}"
         state: present
         pull: always
+      env:
+        IMAGE_REPO: "{{ image_repo }}"
