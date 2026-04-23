@@ -29,5 +29,5 @@
         project_src: "{{ app_dir }}"
         state: present
         pull: always
-      env:
+      environment:
         IMAGE_REPO: "{{ image_repo }}"
