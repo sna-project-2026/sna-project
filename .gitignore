@@ -11,4 +11,4 @@ settings.yaml
 
 ### Sensible ###
 *.pem
-ansible/inventory.ini
+infra/inventory.ini

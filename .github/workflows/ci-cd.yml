@@ -72,14 +72,14 @@ jobs:
 
       - name: Generate Local Inventory
         run: |
-          cat <<EOF > ansible/inventory.ini
+          cat <<EOF > infra/inventory.ini
           [staging]
           127.0.0.1 ansible_connection=local
           EOF
 
       - name: Run Ansible Playbook for Staging
         run: |
-          ansible-playbook -i ansible/inventory.ini ansible/deploy.yml \
+          ansible-playbook -i infra/inventory.ini infra/deploy.yml \
           --limit staging \
           -e "ghcr_username=${{ github.actor }}" \
           -e "ghcr_token=${{ secrets.GITHUB_TOKEN }}"
@@ -102,7 +102,7 @@ jobs:
 
       - name: Generate Production Inventory
         run: |
-          cat <<EOF > ansible/inventory.ini
+          cat <<EOF > infra/inventory.ini
           [production]
           ${{ secrets.VM_IP }}
 
@@ -113,7 +113,7 @@ jobs:
 
       - name: Run Ansible Playbook for Production
         run: |
-          ansible-playbook -i ansible/inventory.ini ansible/deploy.yml \
+          ansible-playbook -i infra/inventory.ini infra/deploy.yml \
           --limit production \
           -e "ghcr_username=${{ github.actor }}" \
           -e "ghcr_token=${{ secrets.GITHUB_TOKEN }}"
