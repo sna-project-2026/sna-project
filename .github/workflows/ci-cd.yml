@@ -60,6 +60,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   deploy-staging:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy_target == 'staging')
     needs: build-and-test
     runs-on: self-hosted
     environment: staging
@@ -88,7 +89,8 @@ jobs:
           -e "image_repo=$LOWERCASE_REPO"
 
   deploy-production:
-    needs: deploy-staging
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_target == 'production'
+    needs: build-and-test
     runs-on: self-hosted
     environment: production
     steps:
